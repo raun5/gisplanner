@@ -51,6 +51,17 @@ def create_ring_graphs(center, rings, max_radius, all_points, block_name):
         print("Matplotlib not available. Skipping graph visualization.")
         return
     
+    print(f"Creating graph visualization...")
+    print(f"Center: {center.x:.2f}, {center.y:.2f}")
+    print(f"Max radius: {max_radius}")
+    print(f"Total FPOI points: {len(all_points)}")
+    print(f"Number of rings: {len(rings)}")
+    
+    # Debug: Check if we have valid coordinates
+    if len(all_points) > 0:
+        first_point = all_points[0]
+        print(f"First FPOI point: {first_point.name} at ({first_point.geometry.x:.2f}, {first_point.geometry.y:.2f})")
+    
     # Create a figure with subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
     fig.suptitle(f'OLT-FPOI Ring Analysis: {block_name}', fontsize=16)
@@ -63,40 +74,68 @@ def create_ring_graphs(center, rings, max_radius, all_points, block_name):
     # Plot the OLT center
     ax1.plot(center.x, center.y, 'ro', markersize=10, label='OLT Center')
     
-    # Plot all FPOI points
-    fpoi_x = [pt.geometry.x for pt in all_points]
-    fpoi_y = [pt.geometry.y for pt in all_points]
-    ax1.scatter(fpoi_x, fpoi_y, c='lightblue', s=50, alpha=0.6, label='FPOI Points')
+    # Plot all FPOI points with better visibility
+    if len(all_points) > 0:
+        fpoi_x = [pt.geometry.x for pt in all_points]
+        fpoi_y = [pt.geometry.y for pt in all_points]
+        
+        # Calculate plot bounds
+        min_x, max_x = min(fpoi_x), max(fpoi_x)
+        min_y, max_y = min(fpoi_y), max(fpoi_y)
+        
+        # Add some padding
+        x_padding = (max_x - min_x) * 0.1 if max_x > min_x else 100
+        y_padding = (max_y - min_y) * 0.1 if max_y > min_y else 100
+        
+        ax1.set_xlim(min_x - x_padding, max_x + x_padding)
+        ax1.set_ylim(min_y - y_padding, max_y + y_padding)
+        
+        # Plot FPOI points with larger markers and better colors
+        ax1.scatter(fpoi_x, fpoi_y, c='blue', s=100, alpha=0.8, label=f'FPOI Points ({len(all_points)})')
+        
+        # Add labels for some FPOI points (first 5)
+        for i, pt in enumerate(all_points[:5]):
+            ax1.annotate(pt.name, (pt.geometry.x, pt.geometry.y), 
+                        xytext=(5, 5), textcoords='offset points', fontsize=8)
     
     # Plot each ring with different colors
-    colors = plt.cm.Set3(np.linspace(0, 1, len(rings)))
-    for i, ring in enumerate(rings):
-        color = colors[i]
-        
-        # Get ring points
-        ring_points = ring['points']
-        ring_x = [pt.geometry.x for pt in ring_points]
-        ring_y = [pt.geometry.y for pt in ring_points]
-        
-        # Add OLT center to start and end of ring
-        ring_x = [center.x] + ring_x + [center.x]
-        ring_y = [center.y] + ring_y + [center.y]
-        
-        # Plot ring path
-        ax1.plot(ring_x, ring_y, 'o-', color=color, linewidth=2, markersize=6, 
-                label=f'Ring {i+1} ({len(ring_points)} FPOIs)')
-        
-        # Highlight ring points
-        ax1.scatter([pt.geometry.x for pt in ring_points], 
-                   [pt.geometry.y for pt in ring_points], 
-                   c=[color], s=100, alpha=0.8)
+    if len(rings) > 0:
+        colors = plt.cm.Set3(np.linspace(0, 1, len(rings)))
+        for i, ring in enumerate(rings):
+            color = colors[i]
+            
+            # Get ring points
+            ring_points = ring['points']
+            if len(ring_points) > 0:
+                ring_x = [pt.geometry.x for pt in ring_points]
+                ring_y = [pt.geometry.y for pt in ring_points]
+                
+                # Add OLT center to start and end of ring
+                ring_x = [center.x] + ring_x + [center.x]
+                ring_y = [center.y] + ring_y + [center.y]
+                
+                # Plot ring path
+                ax1.plot(ring_x, ring_y, 'o-', color=color, linewidth=3, markersize=8, 
+                        label=f'Ring {i+1} ({len(ring_points)} FPOIs)')
+                
+                # Highlight ring points with larger markers
+                ax1.scatter([pt.geometry.x for pt in ring_points], 
+                           [pt.geometry.y for pt in ring_points], 
+                           c=[color], s=150, alpha=0.9, edgecolors='black', linewidth=1)
+                
+                # Add ring labels
+                for j, pt in enumerate(ring_points):
+                    ax1.annotate(f'R{i+1}-{j+1}', (pt.geometry.x, pt.geometry.y), 
+                                xytext=(3, 3), textcoords='offset points', fontsize=7, 
+                                bbox=dict(boxstyle="round,pad=0.3", facecolor=color, alpha=0.7))
     
     # Add max radius circle
     circle = patches.Circle((center.x, center.y), max_radius, fill=False, 
-                           linestyle='--', color='gray', alpha=0.5, label=f'Max Radius ({max_radius})')
+                           linestyle='--', color='gray', alpha=0.7, linewidth=2, 
+                           label=f'Max Radius ({max_radius:.1f})')
     ax1.add_patch(circle)
     
-    ax1.legend()
+    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     ax1.grid(True, alpha=0.3)
     ax1.set_aspect('equal')
     
@@ -134,7 +173,7 @@ def create_ring_graphs(center, rings, max_radius, all_points, block_name):
     ax2.set_xticks(angle_bins)
     ax2.set_xticklabels([f'{int(angle)}°' for angle in angle_bins])
     ax2.grid(True, alpha=0.3)
-    ax2.set_ylim(0, max(fpoi_counts) * 1.1)
+    ax2.set_ylim(0, max(fpoi_counts) * 1.1 if fpoi_counts else 10)
     
     # Add text annotations
     for i, (angle, count) in enumerate(zip(angle_bins[:-1], fpoi_counts)):
@@ -398,6 +437,21 @@ class Command(BaseCommand):
         for angle, name in fpoi_angles:
             self.stdout.write(f"  {angle:>6.1f}°: {name}")
         
+        # Debug: Check coordinate ranges
+        if len(all_points) > 0:
+            x_coords = [pt.geometry.x for pt in all_points]
+            y_coords = [pt.geometry.y for pt in all_points]
+            self.stdout.write(f"\nCoordinate Ranges:")
+            self.stdout.write(f"  X: {min(x_coords):.6f} to {max(x_coords):.6f}")
+            self.stdout.write(f"  Y: {min(y_coords):.6f} to {max(y_coords):.6f}")
+            self.stdout.write(f"  Center: ({center.x:.6f}, {center.y:.6f})")
+            
+            # Check if coordinates are reasonable (not all the same)
+            if len(set(x_coords)) == 1 and len(set(y_coords)) == 1:
+                self.stderr.write("WARNING: All FPOI points have identical coordinates!")
+            elif max(x_coords) - min(x_coords) < 0.001 or max(y_coords) - min(y_coords) < 0.001:
+                self.stderr.write("WARNING: FPOI points are very close together - coordinate system issue?")
+        
         self.stdout.write(f"\nStarting ring generation...")
         self.stdout.write(f"Available FPOI points: {len(all_points)}")
         self.stdout.write(f"Used FPOI points so far: 0")
@@ -556,4 +610,26 @@ class Command(BaseCommand):
         if visualize:
             visualize_sectors(center, rings, max_radius, all_points)
             if generate_graphs:
+                # Debug: Print more information about the data
+                print(f"\nDebug Information for Graph Generation:")
+                print(f"Center coordinates: ({center.x:.6f}, {center.y:.6f})")
+                print(f"Max radius: {max_radius}")
+                print(f"Total FPOI points: {len(all_points)}")
+                print(f"Number of rings: {len(rings)}")
+                
+                if len(all_points) > 0:
+                    print(f"FPOI point coordinates:")
+                    for i, pt in enumerate(all_points[:5]):  # Show first 5
+                        print(f"  {pt.name}: ({pt.geometry.x:.6f}, {pt.geometry.y:.6f})")
+                    if len(all_points) > 5:
+                        print(f"  ... and {len(all_points) - 5} more")
+                
+                if len(rings) > 0:
+                    print(f"Ring information:")
+                    for i, ring in enumerate(rings):
+                        print(f"  Ring {i+1}: {len(ring['points'])} FPOI points")
+                        if len(ring['points']) > 0:
+                            first_pt = ring['points'][0]
+                            print(f"    First point: {first_pt.name} at ({first_pt.geometry.x:.6f}, {first_pt.geometry.y:.6f})")
+                
                 create_ring_graphs(center, rings, max_radius, all_points, block_name)
