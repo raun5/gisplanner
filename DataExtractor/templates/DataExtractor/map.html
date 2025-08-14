@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GIS Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      html, body { height: 100%; margin: 0; }
+      #map { height: 100vh; width: 100%; }
+      .info {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        z-index: 1000;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div class="info">Features: {{ feature_count }}</div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      const map = L.map('map');
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 20,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const data = {{ geojson_data|safe }};
+
+      const featuresLayer = L.geoJSON(data, {
+        pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: '#1976d2',
+          color: '#0d47a1',
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8
+        }),
+        style: {
+          color: '#1976d2',
+          weight: 2
+        },
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties || {};
+          const name = p.name || 'Unnamed';
+          const desc = p.description || '';
+          const src = p.source_file || '';
+          layer.bindPopup(`<strong>${name}</strong><br/>${desc}<br/><small>${src}</small>`);
+        }
+      }).addTo(map);
+
+      if (featuresLayer.getLayers().length > 0) {
+        try {
+          map.fitBounds(featuresLayer.getBounds(), { padding: [20, 20] });
+        } catch (e) {
+          map.setView([0, 0], 2);
+        }
+      } else {
+        map.setView([0, 0], 2);
+      }
+    </script>
+  </body>
+  </html>
+
+
