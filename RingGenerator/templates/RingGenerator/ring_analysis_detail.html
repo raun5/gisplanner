@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Ring Analysis: {{ block_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'ring_generator:dashboard' %}">
+                            <i class="fas fa-home"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'ring_generator:analysis_list' %}">
+                            <i class="fas fa-list"></i>
+                            Ring Analyses
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ block_name }}</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-4">
+                <i class="fas fa-chart-pie text-primary"></i>
+                Ring Analysis: {{ block_name }}
+            </h1>
+        </div>
+    </div>
+
+    <!-- File Information Card -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Analysis Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Block Name:</dt>
+                                <dd class="col-sm-8">
+                                    <strong class="text-primary">{{ block_name }}</strong>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Filename:</dt>
+                                <dd class="col-sm-8">
+                                    <code>{{ filename }}</code>
+                                </dd>
+                                
+                                <dt class="col-sm-4">File Size:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge badge-secondary">
+                                        {{ file_size|filesizeformat }}
+                                    </span>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Created:</dt>
+                                <dd class="col-sm-8">
+                                    <small class="text-muted">
+                                        {{ created_date|date:"M d, Y H:i:s" }}
+                                    </small>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Modified:</dt>
+                                <dd class="col-sm-8">
+                                    <small class="text-muted">
+                                        {{ modified_date|date:"M d, Y H:i:s" }}
+                                    </small>
+                                </dd>
+                                
+                                <dt class="col-sm-4">File Path:</dt>
+                                <dd class="col-sm-8">
+                                    <small class="text-muted">
+                                        <code>{{ file_path }}</code>
+                                    </small>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i>
+                        Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'ring_generator:view_file' filename %}" 
+                           class="btn btn-primary w-100"
+                           target="_blank">
+                            <i class="fas fa-eye"></i>
+                            View Full Image
+                        </a>
+                        
+                        <a href="{% url 'ring_generator:view_file' filename %}" 
+                           class="btn btn-success w-100"
+                           download>
+                            <i class="fas fa-download"></i>
+                            Download Image
+                        </a>
+                        
+                        <a href="{% url 'ring_generator:generate_analysis' %}" 
+                           class="btn btn-info w-100">
+                            <i class="fas fa-plus-circle"></i>
+                            Generate New Analysis
+                        </a>
+                        
+                        <a href="{% url 'ring_generator:analysis_list' %}" 
+                           class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Context Card -->
+    {% if olt_data or fpoi_count > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database"></i>
+                        Data Context
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if olt_data %}
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-satellite-dish"></i>
+                                OLT Block Information
+                            </h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Name:</dt>
+                                <dd class="col-sm-8">{{ olt_data.name }}</dd>
+                                
+                                <dt class="col-sm-4">Description:</dt>
+                                <dd class="col-sm-8">
+                                    {{ olt_data.description|default:"No description available" }}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Source:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge badge-primary">{{ olt_data.source_file }}</span>
+                                </dd>
+                            </dl>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Data Statistics
+                            </h6>
+                            <dl class="row">
+                                <dt class="col-sm-6">Total OLT Blocks:</dt>
+                                <dd class="col-sm-6">
+                                    <span class="badge badge-primary">{{ olt_count }}</span>
+                                </dd>
+                                
+                                <dt class="col-sm-6">Total FPOI Points:</dt>
+                                <dd class="col-sm-6">
+                                    <span class="badge badge-success">{{ fpoi_count }}</span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Image Preview Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-image"></i>
+                        Ring Analysis Visualization
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <p class="text-muted">
+                            This analysis shows the ring coverage map and sector analysis for the 
+                            <strong>{{ block_name }}</strong> OLT block.
+                        </p>
+                    </div>
+                    
+                    <div class="image-container">
+                        <img src="{% url 'ring_generator:view_file' filename %}" 
+                             alt="Ring Analysis for {{ block_name }}"
+                             class="img-fluid border rounded"
+                             style="max-width: 100%; height: auto;"
+                             onerror="this.style.display='none'; document.getElementById('imageError').style.display='block';">
+                        
+                        <div id="imageError" class="alert alert-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Image Loading Error</strong><br>
+                            The analysis image could not be loaded. This might be due to:
+                            <ul class="text-left mt-2">
+                                <li>File permissions issue</li>
+                                <li>File was moved or deleted</li>
+                                <li>Image format not supported</li>
+                            </ul>
+                            <div class="mt-3">
+                                <a href="{% url 'ring_generator:view_file' filename %}" 
+                                   class="btn btn-primary"
+                                   target="_blank">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Try Direct Link
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Click the image to view it in full size, or use the download button above.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Description -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        Analysis Description
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Left Panel: Ring Coverage Map</h6>
+                            <ul class="text-muted">
+                                <li><strong>Red dot:</strong> OLT center location</li>
+                                <li><strong>Blue dots:</strong> FPOI points</li>
+                                <li><strong>Colored paths:</strong> Generated rings connecting FPOI points</li>
+                                <li><strong>Dashed circle:</strong> Maximum radius boundary</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">Right Panel: Sector Coverage Analysis</h6>
+                            <ul class="text-muted">
+                                <li><strong>Blue bars:</strong> FPOI count per 30° sector</li>
+                                <li><strong>Green bars:</strong> Sectors that formed rings</li>
+                                <li><strong>Numbers:</strong> Exact FPOI count per sector</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb"></i>
+                        <strong>Tip:</strong> This visualization helps identify optimal ring configurations 
+                        and areas that may need additional FPOI coverage for efficient network planning.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.image-container {
+    position: relative;
+    min-height: 200px;
+}
+
+.image-container img {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.image-container img:hover {
+    transform: scale(1.02);
+}
+
+#imageError {
+    margin: 20px auto;
+    max-width: 500px;
+}
+</style>
+
+<script>
+// Make image clickable to open in new tab
+document.addEventListener('DOMContentLoaded', function() {
+    const img = document.querySelector('.image-container img');
+    if (img) {
+        img.addEventListener('click', function() {
+            window.open('{% url "ring_generator:view_file" filename %}', '_blank');
+        });
+    }
+});
+</script>
+{% endblock %}

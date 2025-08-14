@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Generate New Ring Analysis{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'ring_generator:dashboard' %}">
+                            <i class="fas fa-home"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Generate Analysis</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-4">
+                <i class="fas fa-plus-circle text-success"></i>
+                Generate New Ring Analysis
+            </h1>
+        </div>
+    </div>
+
+    <!-- Data Status Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database"></i>
+                        Data Availability Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="mr-3">
+                                    {% if olt_blocks %}
+                                        <i class="fas fa-check-circle text-success fa-2x"></i>
+                                    {% else %}
+                                        <i class="fas fa-times-circle text-danger fa-2x"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">OLT Blocks</h6>
+                                    <p class="mb-0">
+                                        {% if olt_blocks %}
+                                            <span class="text-success">{{ olt_blocks|length }} OLT blocks available</span>
+                                        {% else %}
+                                            <span class="text-danger">No OLT blocks found</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="mr-3">
+                                    {% if fpoi_count > 0 %}
+                                        <i class="fas fa-check-circle text-success fa-2x"></i>
+                                    {% else %}
+                                        <i class="fas fa-times-circle text-danger fa-2x"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">FPOI Points</h6>
+                                    <p class="mb-0">
+                                        {% if fpoi_count > 0 %}
+                                            <span class="text-success">{{ fpoi_count }} FPOI points available</span>
+                                        {% else %}
+                                            <span class="text-danger">No FPOI points found</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if not olt_blocks or fpoi_count == 0 %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Data Required:</strong> You need both OLT blocks and FPOI points to generate ring analyses. 
+                        Please import your data first using the DataExtractor app.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Generation Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-terminal"></i>
+                        Management Command
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Ring analysis generation is performed using Django management commands. 
+                        Use the following command in your terminal:
+                    </p>
+                    
+                    <div class="bg-dark text-light p-3 rounded">
+                        <code class="text-light">{{ command_example }}</code>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-outline-primary" onclick="copyCommand()">
+                            <i class="fas fa-copy"></i>
+                            Copy Command
+                        </button>
+                        <button class="btn btn-outline-info" onclick="showCommandHelp()">
+                            <i class="fas fa-question-circle"></i>
+                            Show Help
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available OLT Blocks -->
+    {% if olt_blocks %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-satellite-dish"></i>
+                        Available OLT Blocks
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Use one of these OLT block names in your command:
+                    </p>
+                    
+                    <div class="row">
+                        {% for olt_name in olt_blocks %}
+                        <div class="col-md-4 mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ olt_name }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        onclick="copyOltName('{{ olt_name }}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Command Parameters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i>
+                        Command Parameters
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Required Parameters</h6>
+                            <dl class="row">
+                                <dt class="col-sm-6">--block_name</dt>
+                                <dd class="col-sm-6">Name of the OLT block center</dd>
+                                
+                                <dt class="col-sm-6">--max_radius</dt>
+                                <dd class="col-sm-6">Maximum radius for ring formation</dd>
+                            </dl>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-success">Optional Parameters</h6>
+                            <dl class="row">
+                                <dt class="col-sm-6">--visualize</dt>
+                                <dd class="col-sm-6">Enable text visualization</dd>
+                                
+                                <dt class="col-sm-6">--graphs</dt>
+                                <dd class="col-sm-6">Generate matplotlib graphs</dd>
+                                
+                                <dt class="col-sm-6">--min_fpoi_points</dt>
+                                <dd class="col-sm-6">Minimum FPOI points per ring (default: 7)</dd>
+                                
+                                <dt class="col-sm-6">--max_fpoi_points</dt>
+                                <dd class="col-sm-6">Maximum FPOI points per ring (default: 10)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Commands -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i>
+                        Example Commands
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info">Basic Analysis</h6>
+                            <div class="bg-light p-2 rounded">
+                                <code>python manage.py generate_rings --block_name "OLT_001" --max_radius 1000</code>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-info">Full Analysis with Visualization</h6>
+                            <div class="bg-light p-2 rounded">
+                                <code>python manage.py generate_rings --block_name "OLT_001" --max_radius 1000 --visualize --graphs</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6 class="text-info">Custom Point Limits</h6>
+                            <div class="bg-light p-2 rounded">
+                                <code>python manage.py generate_rings --block_name "OLT_001" --max_radius 1000 --min_fpoi_points 5 --max_fpoi_points 12</code>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-info">Custom Sector Angles</h6>
+                            <div class="bg-light p-2 rounded">
+                                <code>python manage.py generate_rings --block_name "OLT_001" --max_radius 1000 --base_sector_angle 45 --sector_increment 20</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-arrow-right"></i>
+                        Next Steps
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-terminal fa-2x text-primary"></i>
+                            </div>
+                            <h6>1. Run Command</h6>
+                            <p class="text-muted small">Execute the management command in your terminal</p>
+                        </div>
+                        
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-chart-pie fa-2x text-success"></i>
+                            </div>
+                            <h6>2. Generate Files</h6>
+                            <p class="text-muted small">Command will create PNG analysis files</p>
+                        </div>
+                        
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-eye fa-2x text-info"></i>
+                            </div>
+                            <h6>3. View Results</h6>
+                            <p class="text-muted small">Return here to view generated analyses</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'ring_generator:dashboard' %}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </a>
+                        <a href="{% url 'ring_generator:analysis_list' %}" class="btn btn-outline-info">
+                            <i class="fas fa-list"></i>
+                            View Existing Analyses
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyCommand() {
+    const command = '{{ command_example }}';
+    navigator.clipboard.writeText(command).then(function() {
+        // Show success message
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    });
+}
+
+function copyOltName(oltName) {
+    navigator.clipboard.writeText(oltName).then(function() {
+        // Show success message
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+
+function showCommandHelp() {
+    alert('Command Help:\n\n' +
+          '--block_name: Name of the OLT block (must exist in database)\n' +
+          '--max_radius: Maximum distance for ring formation\n' +
+          '--visualize: Show text-based sector visualization\n' +
+          '--graphs: Generate matplotlib visualization graphs\n' +
+          '--min_fpoi_points: Minimum FPOI points per ring (default: 7)\n' +
+          '--max_fpoi_points: Maximum FPOI points per ring (default: 10)\n' +
+          '--base_sector_angle: Starting sector angle in degrees (default: 30)\n' +
+          '--sector_increment: Sector expansion increment (default: 15)');
+}
+</script>
+{% endblock %}

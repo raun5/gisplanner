@@ -72,3 +72,5 @@ def validate_coordinates(lat: float, lon: float) -> bool:
         True if coordinates are valid, False otherwise
     """
     return -90 <= lat <= 90 and -180 <= lon <= 180
+
+

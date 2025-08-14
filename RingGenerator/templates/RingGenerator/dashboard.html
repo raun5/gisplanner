@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Ring Generator Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-circle-notch text-primary"></i>
+                Ring Generator Dashboard
+            </h1>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-satellite-dish"></i>
+                        OLT Blocks
+                    </h5>
+                    <h2 class="card-text">{{ olt_count }}</h2>
+                    <p class="card-text">Available OLT centers</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        FPOI Points
+                    </h5>
+                    <h2 class="card-text">{{ fpoi_count }}</h2>
+                    <p class="card-text">Fiber points of interest</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Analyses
+                    </h5>
+                    <h2 class="card-text">{{ analysis_count }}</h2>
+                    <p class="card-text">Generated ring analyses</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-cog"></i>
+                        Status
+                    </h5>
+                    <h2 class="card-text">
+                        {% if has_data %}
+                            <i class="fas fa-check-circle"></i>
+                        {% else %}
+                            <i class="fas fa-exclamation-triangle"></i>
+                        {% endif %}
+                    </h2>
+                    <p class="card-text">
+                        {% if has_data %}
+                            Ready to generate
+                        {% else %}
+                            Need data import
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-play-circle"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="{% url 'ring_generator:generate_analysis' %}" class="btn btn-primary btn-lg w-100 mb-2">
+                                <i class="fas fa-plus-circle"></i>
+                                Generate New Analysis
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'ring_generator:analysis_list' %}" class="btn btn-info btn-lg w-100 mb-2">
+                                <i class="fas fa-list"></i>
+                                View All Analyses
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Analyses -->
+    {% if recent_analyses %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        Recent Ring Analyses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Block Name</th>
+                                    <th>Generated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for analysis in recent_analyses %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ analysis.block_name }}</strong>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ analysis.created_date|date:"M d, Y H:i" }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'ring_generator:analysis_detail' analysis.filename %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'ring_generator:analysis_list' %}" class="btn btn-outline-info">
+                            View All Analyses
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <h5>No Ring Analyses Yet</h5>
+                    <p class="text-muted">Generate your first ring analysis to get started.</p>
+                    <a href="{% url 'ring_generator:generate_analysis' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i>
+                        Generate First Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Help Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle"></i>
+                        How to Use
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>1. Import Data</h6>
+                            <p>First, import your OLT and FPOI data using the DataExtractor app.</p>
+                            
+                            <h6>2. Generate Analysis</h6>
+                            <p>Use the management command to generate ring analysis:</p>
+                            <code>python manage.py generate_rings --block_name "BLOCK_NAME" --max_radius 1000 --visualize --graphs</code>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>3. View Results</h6>
+                            <p>Generated analyses will appear here and can be viewed in detail.</p>
+                            
+                            <h6>4. Analyze Coverage</h6>
+                            <p>Review the ring coverage maps and sector analysis charts.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Ring Analysis Files{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'ring_generator:dashboard' %}">
+                            <i class="fas fa-home"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Ring Analyses</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-4">
+                <i class="fas fa-chart-pie text-info"></i>
+                Ring Analysis Files
+            </h1>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="card-title">
+                                <i class="fas fa-info-circle"></i>
+                                Analysis Summary
+                            </h5>
+                            <p class="card-text">
+                                Found <strong>{{ total_count }}</strong> ring analysis files across 
+                                <strong>{{ search_directories|length }}</strong> search directories.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <a href="{% url 'ring_generator:generate_analysis' %}" class="btn btn-light">
+                                <i class="fas fa-plus-circle"></i>
+                                Generate New
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if analyses %}
+    <!-- Analysis Files Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i>
+                        Available Analyses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Block Name</th>
+                                    <th>File Size</th>
+                                    <th>Created</th>
+                                    <th>Modified</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for analysis in analyses %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong class="text-primary">{{ analysis.block_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ analysis.filename }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-secondary">
+                                            {{ analysis.file_size|filesizeformat }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ analysis.created_date|date:"M d, Y" }}
+                                            <br>
+                                            {{ analysis.created_date|date:"H:i" }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ analysis.modified_date|date:"M d, Y" }}
+                                            <br>
+                                            {{ analysis.modified_date|date:"H:i" }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'ring_generator:analysis_detail' analysis.filename %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="View Analysis">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'ring_generator:view_file' analysis.filename %}" 
+                                               class="btn btn-sm btn-outline-success" 
+                                               title="Download Image"
+                                               target="_blank">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-info" 
+                                                    title="File Path"
+                                                    onclick="showFilePath('{{ analysis.full_path }}')">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Directories Info -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-folder-open"></i>
+                        Search Directories
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Ring analysis files are searched in the following directories:
+                    </p>
+                    <ul class="list-group list-group-flush">
+                        {% for directory in search_directories %}
+                        <li class="list-group-item">
+                            <i class="fas fa-folder text-warning"></i>
+                            <code>{{ directory }}</code>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Analyses Found -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <h5>No Ring Analysis Files Found</h5>
+                    <p class="text-muted">
+                        No ring analysis files were found in the search directories. 
+                        Generate your first analysis to get started.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{% url 'ring_generator:generate_analysis' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i>
+                            Generate First Analysis
+                        </a>
+                        <a href="{% url 'ring_generator:dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- File Path Modal -->
+<div class="modal fade" id="filePathModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">File Path</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Full path to the analysis file:</p>
+                <code id="filePathText"></code>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="copyToClipboard()">Copy Path</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showFilePath(path) {
+    document.getElementById('filePathText').textContent = path;
+    const modal = new bootstrap.Modal(document.getElementById('filePathModal'));
+    modal.show();
+}
+
+function copyToClipboard() {
+    const text = document.getElementById('filePathText').textContent;
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.textContent = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-primary');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}
